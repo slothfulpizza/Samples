@@ -1,102 +1,92 @@
 import type { WeatherData, ForecastDay, CurrentWeather, HourlyForecast } from '../types';
 
-// This app now uses the OpenWeatherMap API for live data.
-// An API key is required. Please set the WEATHER_API_KEY environment variable.
-const API_KEY = typeof process !== 'undefined' && process.env && process.env.WEATHER_API_KEY
-  ? process.env.WEATHER_API_KEY
-  : '';
-  
-const API_BASE_URL = 'https://api.openweathermap.org/data/2.5';
+// --- Mock Data Generation ---
 
-// --- Data Transformation ---
+const MOCK_CONDITIONS = ['Clear', 'Clouds', 'Rain', 'Snow', 'Thunderstorm', 'Drizzle', 'Mist'];
 
-/**
- * Transforms raw data from the OpenWeatherMap API into the WeatherData structure used by the app.
- * @param currentData - Raw response from the /weather endpoint.
- * @param forecastData - Raw response from the /forecast endpoint.
- * @returns A structured WeatherData object.
- */
-const transformWeatherData = (currentData: any, forecastData: any): WeatherData => {
-    // Current Weather
-    const current: CurrentWeather = {
-        temperature: Math.round(currentData.main.temp - 273.15),
-        condition: currentData.weather[0].main,
-        windSpeed: Math.round(currentData.wind.speed * 3.6),
-        humidity: currentData.main.humidity,
-        feelsLike: Math.round(currentData.main.feels_like - 273.15),
-        visibility: Math.round(currentData.visibility / 1000), // Convert meters to km
-    };
-
-    // Hourly Forecast (next 24 hours, in 3-hour intervals)
-    const hourly: HourlyForecast[] = forecastData.list.slice(0, 8).map((item: any) => {
-        const date = new Date(item.dt * 1000);
-        return {
-            time: date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }).replace(' ', ''),
-            temperature: Math.round(item.main.temp - 273.15),
-            condition: item.weather[0].main,
-            precipitationChance: Math.round(item.pop * 100),
-        };
-    });
-    
-    // 5-Day Forecast
-    const dailyForecasts: { [key: string]: any[] } = {};
-    forecastData.list.forEach((item: any) => {
-        const date = item.dt_txt.split(' ')[0];
-        if (!dailyForecasts[date]) {
-            dailyForecasts[date] = [];
-        }
-        dailyForecasts[date].push(item);
-    });
-
-    const forecastDaysProcessed: ForecastDay[] = Object.keys(dailyForecasts).map(date => {
-        const dayItems = dailyForecasts[date];
-        const minTemp = Math.min(...dayItems.map(item => item.main.temp_min));
-        const maxTemp = Math.max(...dayItems.map(item => item.main.temp_max));
-        const representativeItem = dayItems.find(item => item.dt_txt.includes("12:00:00")) || dayItems[0];
-        
-        return {
-            date: date,
-            maxTemp: Math.round(maxTemp - 273.15),
-            minTemp: Math.round(minTemp - 273.15),
-            condition: representativeItem.weather[0].main,
-        };
-    });
-
-    // Ensure we return the *next* 5 days, excluding today.
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayIndex = forecastDaysProcessed.findIndex(day => day.date === todayStr);
-    const forecast = todayIndex !== -1 
-        ? forecastDaysProcessed.slice(todayIndex + 1, todayIndex + 6) 
-        : forecastDaysProcessed.slice(0, 5);
-
-
-    return {
-        city: currentData.name,
-        current,
-        hourly,
-        forecast,
-    };
+const getRandomInt = (min: number, max: number) => {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
+const getRandomElement = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
-// --- API Fetching ---
+const generateMockWeatherData = (city: string): WeatherData => {
+  // Base condition and temperature for consistency
+  const baseCondition = getRandomElement(MOCK_CONDITIONS);
+  let baseTemp: number;
 
-/**
- * Generic fetch handler for API calls.
- * @param url - The URL to fetch.
- * @returns The JSON response.
- */
-const fetchData = async (url: string) => {
-    const response = await fetch(url);
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `API error: ${response.status}`);
-    }
-    return response.json();
+  // Make temperature somewhat realistic for the condition
+  switch (baseCondition) {
+    case 'Clear': baseTemp = getRandomInt(15, 30); break;
+    case 'Clouds': baseTemp = getRandomInt(10, 22); break;
+    case 'Rain': case 'Drizzle': baseTemp = getRandomInt(8, 18); break;
+    case 'Snow': baseTemp = getRandomInt(-5, 2); break;
+    case 'Thunderstorm': baseTemp = getRandomInt(18, 28); break;
+    case 'Mist': baseTemp = getRandomInt(5, 15); break;
+    default: baseTemp = getRandomInt(5, 25);
+  }
+
+  // Current Weather
+  const current: CurrentWeather = {
+    temperature: baseTemp,
+    condition: baseCondition,
+    windSpeed: getRandomInt(5, 40),
+    humidity: getRandomInt(40, 90),
+    feelsLike: baseTemp - getRandomInt(1, 5),
+    visibility: getRandomInt(1, 10),
+  };
+
+  // Hourly Forecast (next 12 hours)
+  const hourly: HourlyForecast[] = Array.from({ length: 12 }, (_, i) => {
+    const date = new Date();
+    date.setHours(date.getHours() + i + 1);
+    const tempFluctuation = getRandomInt(-2, 2);
+    const chanceOfPrecip = ['Rain', 'Drizzle', 'Snow', 'Thunderstorm'].includes(baseCondition)
+      ? getRandomInt(40, 90)
+      : getRandomInt(0, 20);
+
+    return {
+      time: date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }).replace(' ', ''),
+      temperature: baseTemp + tempFluctuation,
+      condition: baseCondition, // Keep it simple, same condition
+      precipitationChance: chanceOfPrecip,
+    };
+  });
+
+  // 5-Day Forecast
+  const forecast: ForecastDay[] = Array.from({ length: 5 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() + i + 1);
+    const dayCondition = getRandomElement(MOCK_CONDITIONS);
+    const minTemp = baseTemp + getRandomInt(-8, -2);
+    const maxTemp = baseTemp + getRandomInt(2, 8);
+
+    return {
+      date: date.toISOString().split('T')[0],
+      maxTemp: Math.max(minTemp, maxTemp),
+      minTemp: Math.min(minTemp, maxTemp),
+      condition: dayCondition,
+    };
+  });
+
+  return {
+    city,
+    current,
+    hourly,
+    forecast,
+  };
+};
+
+// --- Mock Service Implementation ---
+
+const simulateApiCall = <T>(data: T): Promise<T> => {
+    return new Promise(resolve => setTimeout(() => resolve(data), 500 + Math.random() * 500));
 }
 
 /**
- * Fetches weather data for a given city name.
+ * Fetches mock weather data for a given city name.
  * @param city - The name of the city.
  * @returns A promise that resolves to the structured WeatherData.
  */
@@ -104,50 +94,23 @@ export const getWeatherByCity = async (city: string): Promise<WeatherData> => {
     if (!city || city.trim() === '') {
         throw new Error(`Please enter a valid city name.`);
     }
-    if (!API_KEY) {
-      throw new Error('Weather API key (WEATHER_API_KEY) is not configured.');
+
+    if (city.toLowerCase() === 'nowhere') {
+      throw new Error(`Could not find weather data for "${city}". It probably doesn't exist!`);
     }
 
-    const currentUrl = `${API_BASE_URL}/weather?q=${city}&appid=${API_KEY}`;
-    const forecastUrl = `${API_BASE_URL}/forecast?q=${city}&appid=${API_KEY}`;
-
-    try {
-        const [currentData, forecastData] = await Promise.all([
-            fetchData(currentUrl),
-            fetchData(forecastUrl)
-        ]);
-        return transformWeatherData(currentData, forecastData);
-    } catch(error) {
-        console.error("Failed to fetch weather data for city:", error);
-        if (error instanceof Error && error.message.toLowerCase().includes('city not found')) {
-            throw new Error(`Could not find weather data for "${city}". Please check the spelling.`);
-        }
-        throw new Error('Failed to retrieve weather data. Please try again.');
-    }
+    const mockData = generateMockWeatherData(city);
+    return simulateApiCall(mockData);
 };
 
 /**
- * Fetches weather data for given geographic coordinates.
- * @param lat - Latitude.
- * @param lon - Longitude.
+ * Fetches mock weather data for given geographic coordinates.
+ * @param lat - Latitude (unused in mock).
+ * @param lon - Longitude (unused in mock).
  * @returns A promise that resolves to the structured WeatherData.
  */
 export const getWeatherByCoords = async (lat: number, lon: number): Promise<WeatherData> => {
-    if (!API_KEY) {
-      throw new Error('Weather API key (WEATHER_API_KEY) is not configured.');
-    }
-    
-    const currentUrl = `${API_BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
-    const forecastUrl = `${API_BASE_URL}/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
-    
-    try {
-        const [currentData, forecastData] = await Promise.all([
-            fetchData(currentUrl),
-            fetchData(forecastUrl)
-        ]);
-        return transformWeatherData(currentData, forecastData);
-    } catch(error) {
-        console.error("Failed to fetch weather data by coordinates:", error);
-        throw new Error('Could not fetch weather data for your current location.');
-    }
+    // We don't use lat/lon, just return data for a generic "Current Location"
+    const mockData = generateMockWeatherData('Current Location');
+    return simulateApiCall(mockData);
 };
