@@ -25,7 +25,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onGeolocate, isLoading 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search for a city..."
-          className="w-full pl-10 pr-4 py-3 bg-white/10 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-white/50 placeholder-white/60 backdrop-blur-sm"
+          className="w-full pl-10 pr-4 py-3 bg-white/10 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-sky-400/80 placeholder-white/60 backdrop-blur-sm"
           disabled={isLoading}
         />
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/70" />
@@ -33,7 +33,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, onGeolocate, isLoading 
       <div className="flex items-center gap-2 w-full sm:w-auto">
         <button
           type="submit"
-          className="w-full sm:w-auto px-6 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400/50 rounded-full font-semibold transition-colors flex-grow"
+          className="w-full sm:w-auto px-6 py-3 bg-white/10 hover:bg-white/20 disabled:bg-white/5 rounded-full font-semibold transition-colors flex-grow"
           disabled={isLoading}
         >
           Search

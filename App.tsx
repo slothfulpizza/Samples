@@ -18,19 +18,19 @@ const App: React.FC = () => {
   const [isGeminiLoading, setIsGeminiLoading] = useState<boolean>(false);
 
   // State for background transitions
-  const [backgroundClass, setBackgroundClass] = useState('from-gray-700 to-gray-900');
+  const [backgroundClass, setBackgroundClass] = useState('from-slate-800 to-gray-900');
   const [oldBackgroundClass, setOldBackgroundClass] = useState<string | null>(null);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
   const determineBackgroundClass = useCallback((data: WeatherData | null) => {
-    if (!data) return 'from-gray-700 to-gray-900';
+    if (!data) return 'from-slate-800 to-gray-900';
     const condition = data.current.condition.toLowerCase();
-    if (condition.includes('clear') || condition.includes('sun')) return 'from-blue-400 to-blue-600';
-    if (condition.includes('cloud')) return 'from-gray-500 to-gray-700';
-    if (condition.includes('rain') || condition.includes('drizzle')) return 'from-blue-700 to-gray-800';
-    if (condition.includes('snow')) return 'from-white to-blue-200';
-    if (condition.includes('thunder')) return 'from-gray-800 to-purple-900';
-    return 'from-gray-700 to-gray-900';
+    if (condition.includes('clear') || condition.includes('sun')) return 'from-sky-500 to-indigo-500';
+    if (condition.includes('cloud')) return 'from-slate-500 to-slate-700';
+    if (condition.includes('rain') || condition.includes('drizzle')) return 'from-slate-700 to-gray-900';
+    if (condition.includes('snow')) return 'from-sky-200 to-blue-400';
+    if (condition.includes('thunder')) return 'from-indigo-800 to-gray-900';
+    return 'from-slate-800 to-gray-900';
   }, []);
 
   useEffect(() => {
@@ -138,10 +138,10 @@ const App: React.FC = () => {
       
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
         <header className="mb-6">
-          <h1 className="text-4xl md:text-5xl font-bold text-center mb-2 tracking-wider text-shadow">
+          <h1 className="text-4xl md:text-5xl font-bold text-center mb-2 tracking-wide text-shadow">
             Gemini Weather
           </h1>
-          <p className="text-center text-lg text-white/80">Your AI-powered weather forecast</p>
+          <p className="text-center text-lg text-slate-300">Your AI-powered weather forecast</p>
           <SearchBar onSearch={handleSearch} onGeolocate={handleGeolocation} isLoading={isLoading} />
         </header>
 

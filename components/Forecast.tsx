@@ -20,7 +20,7 @@ const ForecastCard: React.FC<{ day: ForecastDay }> = ({ day }) => {
       </div>
       <div className="flex gap-2">
         <p className="font-bold">{day.maxTemp}°</p>
-        <p className="text-white/60">{day.minTemp}°</p>
+        <p className="text-slate-400">{day.minTemp}°</p>
       </div>
     </div>
   );
